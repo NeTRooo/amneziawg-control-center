@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <h1>Серверы</h1>
+    <a class="btn" href="/ui/servers/add">+ Добавить</a>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Имя</th>
+        <th>Host</th>
+        <th>Web UI</th>
+        <th>WG UDP</th>
+        <th>Статус</th>
+        <th>Ошибка</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in servers %}
+      <tr>
+        <td>{{ s.name }}</td>
+        <td>{{ s.ssh_user }}@{{ s.host }}:{{ s.ssh_port }}</td>
+        <td>
+          {{ s.web_ui_port }}
+          {% if s.status.value == "ready" %}
+            <a href="{{ s.remote_scheme }}://{{ s.host }}:{{ s.web_ui_port }}" target="_blank" rel="noopener">открыть</a>
+          {% endif %}
+        </td>
+        <td>{{ s.wg_port }}</td>
+        <td><span class="badge badge--{{ s.status.value }}">{{ s.status.value }}</span></td>
+        <td class="muted">{{ s.last_error or "" }}</td>
+        <td>
+          <form class="inline" method="post" action="/ui/servers/{{ s.id }}/check">
+            <button class="btn btn--secondary" type="submit">Проверить</button>
+          </form>
+          <form class="inline" method="post" action="/ui/servers/{{ s.id }}/deploy">
+            <button class="btn" type="submit">Деплой</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if servers|length == 0 %}
+      <tr><td colspan="7" class="muted">Пока нет серверов</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+{% endblock %}

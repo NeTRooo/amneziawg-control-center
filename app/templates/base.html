@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or "Amnezia Manager" }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header__row">
+      <a class="brand" href="/ui/servers">Amnezia Manager</a>
+      <nav class="nav">
+        <a href="/ui/servers">Серверы</a>
+        <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <div class="container">
+      <small>Backend: FastAPI + SQLModel + Alembic + Postgres | Queue: ARQ + Redis</small>
+    </div>
+  </footer>
+</body>
+</html>

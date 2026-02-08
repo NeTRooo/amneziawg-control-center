@@ -1,0 +1,16 @@
+.env
+pgdata/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite
+.venv/
+venv/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.idea/
+.vscode/
