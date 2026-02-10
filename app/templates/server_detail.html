@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <div>
+      <h1>{{ server.name }}</h1>
+      <div class="muted">{{ server.ssh_user }}@{{ server.host }}:{{ server.ssh_port }} • Web UI: {{ server.web_ui_port }} • WG: {{ server.wg_port }}</div>
+    </div>
+    <a class="btn btn--secondary" href="/ui/servers">← Назад</a>
+  </div>
+
+  {% if error %}
+    <div class="alert">{{ error }}</div>
+  {% endif %}
+
+  <div class="grid">
+    <div class="card">
+      <h2>Статус инстанса (manager)</h2>
+      <p>
+        <span class="badge badge--{{ server.status.value }}">{{ server.status.value }}</span>
+        <span class="muted">{{ server.last_error or "" }}</span>
+      </p>
+      <p class="muted">Remote: {{ server.remote_scheme }}://{{ server.host }}:{{ server.web_ui_port }}</p>
+      {% if user.global_role == 'admin' %}
+        <p><a href="/ui/admin/servers/{{ server.id }}/access">Настроить доступ (RBAC)</a></p>
+      {% endif %}
+      {% if server.status.value == 'ready' %}
+        <p><a href="{{ server.remote_scheme }}://{{ server.host }}:{{ server.web_ui_port }}" target="_blank" rel="noopener">Открыть remote UI</a></p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Remote /api/system/status</h2>
+      {% if remote_status %}
+        <pre class="pre">{{ remote_status | tojson(indent=2) }}</pre>
+      {% else %}
+        <p class="muted">нет данных</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 18px;">
+    <div class="row">
+      <h2>VPN-сервера внутри инстанса</h2>
+      {% if can_write %}
+        <span class="muted">(можно создавать/управлять)</span>
+      {% else %}
+        <span class="muted">(только просмотр)</span>
+      {% endif %}
+    </div>
+
+    {% if can_write %}
+      <details style="margin: 10px 0 16px;">
+        <summary class="link">+ Создать VPN-сервер</summary>
+        <form method="post" action="/ui/servers/{{ server.id }}/awg/servers/create" class="form" style="margin-top: 10px;">
+          <div class="form__row">
+            <div>
+              <label class="label">Имя</label>
+              <input class="input" name="name" required placeholder="wg0" />
+            </div>
+            <div>
+              <label class="label">Порт</label>
+              <input class="input" name="port" type="number" value="51820" />
+            </div>
+          </div>
+          <div class="form__row">
+            <div>
+              <label class="label">Subnet</label>
+              <input class="input" name="subnet" value="10.0.0.0/24" />
+            </div>
+            <div>
+              <label class="label">MTU</label>
+              <input class="input" name="mtu" type="number" value="1280" />
+            </div>
+          </div>
+          <div class="form__row">
+            <label class="check"><input type="checkbox" name="obfuscation" checked /> Obfuscation</label>
+            <label class="check"><input type="checkbox" name="auto_start" checked /> Auto start</label>
+          </div>
+          <button class="btn" type="submit">Создать</button>
+        </form>
+      </details>
+    {% endif %}
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Имя</th>
+          <th>Порт</th>
+          <th>Статус</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in awg_servers %}
+          <tr>
+            <td><code>{{ s.get('id') }}</code></td>
+            <td>{{ s.get('name') or '-' }}</td>
+            <td>{{ s.get('port') or '-' }}</td>
+            <td>
+              {% if s.get('running') is not none %}
+                <span class="badge badge--role">{{ 'running' if s.get('running') else 'stopped' }}</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn btn--secondary" href="/ui/servers/{{ server.id }}/awg/servers/{{ s.get('id') }}">Открыть</a>
+              {% if can_write %}
+                <form class="inline" method="post" action="/ui/servers/{{ server.id }}/awg/servers/{{ s.get('id') }}/start">
+                  <button class="btn btn--secondary" type="submit">Start</button>
+                </form>
+                <form class="inline" method="post" action="/ui/servers/{{ server.id }}/awg/servers/{{ s.get('id') }}/stop">
+                  <button class="btn btn--secondary" type="submit">Stop</button>
+                </form>
+                <form class="inline" method="post" action="/ui/servers/{{ server.id }}/awg/servers/{{ s.get('id') }}/delete" onsubmit="return confirm('Удалить VPN-сервер?');">
+                  <button class="btn btn--danger" type="submit">Delete</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        {% if awg_servers|length == 0 %}
+          <tr><td colspan="5" class="muted">На инстансе нет VPN-серверов</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -24,9 +24,8 @@ class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
 
     functions = [
-        tasks.precheck_only,
-        tasks.precheck_and_deploy,
-        tasks.deploy_only,
+        tasks.instance_precheck,
+        tasks.instance_deploy,
     ]
 
     on_startup = startup

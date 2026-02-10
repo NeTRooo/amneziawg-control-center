@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     # Crypto (Fernet 32-byte urlsafe base64)
     encryption_key: str
 
+    # Auth / JWT
+    jwt_secret_key: str = "CHANGE_ME"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_minutes: int = 60 * 24 * 7  # 7 days
+    auth_cookie_name: str = "access_token"
+
+    # Bootstrap admin (created automatically if users table is empty)
+    bootstrap_admin_username: str = "admin"
+    bootstrap_admin_password: str = "admin"
+
     # SSH / deploy
     ssh_connect_timeout: float = 10.0
     ssh_command_timeout: float = 30.0

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <div>
+      <h1>{{ instance.name }}</h1>
+      <div class="muted">Instance ID: <span class="mono">{{ instance.id }}</span></div>
+      <div class="muted">Host: <span class="mono">{{ instance.host }}</span> • Web UI: <span class="mono">{{ instance.remote_scheme }}://{{ instance.host }}:{{ instance.web_ui_port }}</span></div>
+    </div>
+    <div class="row-actions">
+      <form method="post" action="/ui/servers/{{ instance.id }}/check" style="display:inline">
+        <button type="submit" class="button button-secondary">Проверить</button>
+      </form>
+      <form method="post" action="/ui/servers/{{ instance.id }}/deploy" style="display:inline">
+        <button type="submit">Деплой</button>
+      </form>
+      <form method="post" action="/ui/servers/{{ instance.id }}/delete" style="display:inline" onsubmit="return confirm('Удалить инстанс из менеджера?')">
+        <button type="submit" class="button button-danger">Удалить</button>
+      </form>
+      {% if user.global_role.value == "admin" %}
+        <a class="button button-secondary" href="/ui/admin/servers/{{ instance.id }}/access">Доступы</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Состояние</h2>
+    <div>Статус: <span class="badge badge-{{ instance.status.value }}">{{ instance.status.value }}</span></div>
+    {% if instance.last_error %}
+      <div class="alert alert-error"><b>Ошибка:</b> {{ instance.last_error }}</div>
+    {% endif %}
+    <div class="muted">Последняя проверка: {{ instance.last_check_at or "—" }} • Последний деплой: {{ instance.last_deploy_at or "—" }}</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Remote /api/system/status</h2>
+      {% if remote_error %}
+        <div class="alert alert-error">{{ remote_error }}</div>
+      {% endif %}
+      {% if system_status %}
+        <pre class="pre">{{ system_status | tojson(indent=2) }}</pre>
+      {% else %}
+        <div class="muted">Нет данных</div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>VPN-сервера в инстансе</h2>
+      {% if awg_servers %}
+        <div class="table">
+          <div class="thead">
+            <div>ID</div><div>Имя</div><div>Порт</div><div>Статус</div><div></div>
+          </div>
+          {% for s in awg_servers %}
+            <div class="trow">
+              <div class="mono">{{ s.id or s.get("id") }}</div>
+              <div>{{ s.name or s.get("name") }}</div>
+              <div class="mono">{{ s.port or s.get("port") }}</div>
+              <div>{{ s.status or s.get("status") }}</div>
+              <div class="right">
+                <a class="button button-secondary" href="/ui/servers/{{ instance.id }}/awg/servers/{{ s.id or s.get('id') }}">Открыть</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="muted">Список пуст или недоступен</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

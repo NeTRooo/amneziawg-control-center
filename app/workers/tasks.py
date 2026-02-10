@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 import uuid
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.security import CryptoBox
 from app.core.config import settings
-from app.db.crud import get_server, patch_server, update_server_status
-from app.db.models import ServerStatus, utcnow
+from app.core.security import CryptoBox
+from app.db import crud
+from app.db.models import InstanceStatus
 from app.db.session import AsyncSessionLocal
 from app.services.deploy import deploy, precheck
 
@@ -19,78 +17,47 @@ def _crypto() -> CryptoBox:
     return CryptoBox.from_key(settings.encryption_key)
 
 
-async def _with_session(fn, *args, **kwargs):  # noqa: ANN001
-    async with AsyncSessionLocal() as session:
-        return await fn(session, *args, **kwargs)
-
-
-async def precheck_only(ctx, server_id: str) -> dict:  # noqa: ANN001
-    sid = uuid.UUID(server_id)
+async def instance_precheck(ctx, instance_id: str) -> dict:  # noqa: ANN001
+    iid = uuid.UUID(instance_id)
     crypto = _crypto()
 
     async with AsyncSessionLocal() as session:
-        srv = await get_server(session, sid)
-        if not srv:
-            return {"ok": False, "error": "server not found"}
+        inst = await crud.get_instance(session, iid)
+        if not inst:
+            return {"ok": False, "error": "instance not found"}
 
-        await update_server_status(session, srv, ServerStatus.checking, error=None)
-        report = await precheck(srv, crypto)
+        await crud.update_instance_status(session, iid, InstanceStatus.checking, last_error=None)
 
+        report = await precheck(inst, crypto)
         if report.ok:
-            await patch_server(session, srv, status=ServerStatus.new, last_error=None, last_check_at=utcnow())
-        else:
-            await patch_server(session, srv, status=ServerStatus.error, last_error=report.details.get("error"), last_check_at=utcnow())
+            new_status = InstanceStatus.ready if inst.status == InstanceStatus.ready else InstanceStatus.new
+            await crud.update_instance_status(session, iid, new_status, last_error=None, checked=True)
+            return {"ok": True, "details": report.details}
+        await crud.update_instance_status(session, iid, InstanceStatus.error, last_error=report.details.get("error"), checked=True)
+        return {"ok": False, "details": report.details}
 
-        return {"ok": report.ok, "details": report.details}
 
-
-async def deploy_only(ctx, server_id: str) -> dict:  # noqa: ANN001
-    sid = uuid.UUID(server_id)
+async def instance_deploy(ctx, instance_id: str) -> dict:  # noqa: ANN001
+    iid = uuid.UUID(instance_id)
     crypto = _crypto()
 
     async with AsyncSessionLocal() as session:
-        srv = await get_server(session, sid)
-        if not srv:
-            return {"ok": False, "error": "server not found"}
+        inst = await crud.get_instance(session, iid)
+        if not inst:
+            return {"ok": False, "error": "instance not found"}
 
-        await update_server_status(session, srv, ServerStatus.deploying, error=None)
+        await crud.update_instance_status(session, iid, InstanceStatus.deploying, last_error=None)
 
-        try:
-            await deploy(srv, crypto)
-            # deploy() may generate nginx password on the fly
-            await patch_server(session, srv, nginx_password_enc=srv.nginx_password_enc)
-            await update_server_status(session, srv, ServerStatus.ready, error=None)
-            return {"ok": True}
-        except Exception as e:  # noqa: BLE001
-            log.exception("Deploy failed for %s", srv.host)
-            await update_server_status(session, srv, ServerStatus.error, error=str(e))
-            return {"ok": False, "error": str(e)}
-
-
-async def precheck_and_deploy(ctx, server_id: str) -> dict:  # noqa: ANN001
-    sid = uuid.UUID(server_id)
-    crypto = _crypto()
-
-    async with AsyncSessionLocal() as session:
-        srv = await get_server(session, sid)
-        if not srv:
-            return {"ok": False, "error": "server not found"}
-
-        await update_server_status(session, srv, ServerStatus.checking, error=None)
-        report = await precheck(srv, crypto)
-
+        report = await precheck(inst, crypto)
         if not report.ok:
-            await update_server_status(session, srv, ServerStatus.error, error=report.details.get("error"))
+            await crud.update_instance_status(session, iid, InstanceStatus.error, last_error=report.details.get("error"), checked=True)
             return {"ok": False, "details": report.details}
 
-        await update_server_status(session, srv, ServerStatus.deploying, error=None)
-
         try:
-            await deploy(srv, crypto)
-            await patch_server(session, srv, nginx_password_enc=srv.nginx_password_enc)
-            await update_server_status(session, srv, ServerStatus.ready, error=None)
-            return {"ok": True, "details": report.details}
+            await deploy(inst, crypto)
         except Exception as e:  # noqa: BLE001
-            log.exception("Precheck+deploy failed for %s", srv.host)
-            await update_server_status(session, srv, ServerStatus.error, error=str(e))
-            return {"ok": False, "error": str(e), "details": report.details}
+            await crud.update_instance_status(session, iid, InstanceStatus.error, last_error=str(e), deployed=True)
+            return {"ok": False, "error": str(e)}
+
+        await crud.update_instance_status(session, iid, InstanceStatus.ready, last_error=None, deployed=True)
+        return {"ok": True}

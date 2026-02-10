@@ -14,3 +14,5 @@ python-multipart>=0.0.9
 cryptography>=42.0
 orjson>=3.10
 tenacity>=8.2
+python-jose[cryptography]>=3.3
+passlib>=1.7

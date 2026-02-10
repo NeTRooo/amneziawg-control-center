@@ -1,81 +1,77 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Добавить сервер</h1>
+  <div class="card">
+    <h1>Добавить инстанс</h1>
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/ui/servers/add">
+      <div class="grid">
+        <label>Название
+          <input type="text" name="name" required placeholder="My Server #1">
+        </label>
+        <label>IP / Host
+          <input type="text" name="host" required placeholder="203.0.113.10">
+        </label>
+        <label>SSH порт
+          <input type="number" name="ssh_port" value="22">
+        </label>
+        <label>SSH пользователь
+          <input type="text" name="ssh_user" value="root">
+        </label>
 
-  <form method="post" action="/ui/servers/add" class="form">
-    <div class="grid">
-      <label>Имя
-        <input name="name" required placeholder="My VPS #1">
+        <label>Auth method
+          <select name="auth_method">
+            <option value="key" selected>SSH key</option>
+            <option value="password">Password</option>
+          </select>
+        </label>
+
+        <label>SSH пароль (если password)
+          <input type="password" name="ssh_password">
+        </label>
+
+        <label>SSH private key (если key)
+          <textarea name="ssh_private_key" rows="8" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+        </label>
+
+        <label>Passphrase (если ключ зашифрован)
+          <input type="password" name="ssh_private_key_passphrase">
+        </label>
+
+        <label>Remote scheme
+          <select name="remote_scheme">
+            <option value="http" selected>http</option>
+            <option value="https">https</option>
+          </select>
+        </label>
+
+        <label>Web UI port (TCP)
+          <input type="number" name="web_ui_port" value="8080">
+        </label>
+
+        <label>WG port (UDP)
+          <input type="number" name="wg_port" value="51820">
+        </label>
+
+        <label>NGINX user
+          <input type="text" name="nginx_user" value="admin">
+        </label>
+
+        <label>NGINX password (optional)
+          <input type="password" name="nginx_password" placeholder="если пусто — сгенерируем">
+        </label>
+      </div>
+
+      <label class="checkbox">
+        <input type="checkbox" name="deploy_now" value="true">
+        Сразу задеплоить контейнер (docker compose up -d)
       </label>
 
-      <label>IP/Host
-        <input name="host" required placeholder="203.0.113.10">
-      </label>
-
-      <label>SSH порт
-        <input name="ssh_port" type="number" value="22">
-      </label>
-
-      <label>SSH пользователь (только root)
-        <input name="ssh_user" value="root">
-      </label>
-
-      <label>Метод авторизации
-        <select name="auth_method">
-          <option value="key" selected>SSH key</option>
-          <option value="password">Password</option>
-        </select>
-      </label>
-
-      <label>SSH password (если выбран password)
-        <input name="ssh_password" type="password" autocomplete="new-password">
-      </label>
-
-      <label>Web UI TCP порт
-        <input name="web_ui_port" type="number" value="8080">
-      </label>
-
-      <label>WG UDP порт
-        <input name="wg_port" type="number" value="51820">
-      </label>
-
-      <label>Папка деплоя на сервере
-        <input name="deploy_dir" value="/opt/amneziawg-web-ui">
-      </label>
-
-      <label>Docker image
-        <input name="awg_image" value="alexishw/amneziawg-web-ui:latest">
-      </label>
-
-      <label>NGINX user (basic auth)
-        <input name="nginx_user" value="admin">
-      </label>
-
-      <label>NGINX password (optional, иначе сгенерируем при деплое)
-        <input name="nginx_password" type="password" autocomplete="new-password">
-      </label>
-    </div>
-
-    <label>SSH private key (если выбран key)
-      <textarea name="ssh_private_key" rows="10" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
-    </label>
-
-    <label>Passphrase для SSH key (если есть)
-      <input name="ssh_private_key_passphrase" type="password" autocomplete="new-password">
-    </label>
-
-    <label class="checkbox">
-      <input type="checkbox" name="deploy_now" value="true">
-      Сразу запустить precheck+deploy
-    </label>
-
-    <div class="row">
-      <button class="btn" type="submit">Сохранить</button>
-      <a class="btn btn--secondary" href="/ui/servers">Отмена</a>
-    </div>
-
-    <p class="muted">
-      Проверки: SSH доступ, root (id -u = 0), Docker/Docker Compose, /dev/net/tun, свободные порты (TCP/UDP).
-    </p>
-  </form>
+      <div class="row">
+        <button type="submit">Добавить</button>
+        <a class="button button-secondary" href="/ui/servers">Отмена</a>
+      </div>
+    </form>
+  </div>
 {% endblock %}

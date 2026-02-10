@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <h1>Пользователи</h1>
+  </div>
+
+  <div class="card">
+    <h2>Создать пользователя</h2>
+    <form method="post" action="/ui/admin/users/add">
+      <div class="grid">
+        <label>Username
+          <input type="text" name="username" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" required>
+        </label>
+        <label>Global role
+          <select name="global_role">
+            <option value="viewer">viewer</option>
+            <option value="operator">operator</option>
+            <option value="admin">admin</option>
+          </select>
+        </label>
+      </div>
+      <button type="submit">Создать</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Список</h2>
+    <div class="table">
+      <div class="thead">
+        <div>Username</div><div>Role</div><div>Active</div><div></div>
+      </div>
+      {% for u in users %}
+        <div class="trow">
+          <div>{{ u.username }}</div>
+          <div>{{ u.global_role.value }}</div>
+          <div>{{ "yes" if u.is_active else "no" }}</div>
+          <div class="right">
+            <form method="post" action="/ui/admin/users/{{ u.id }}/delete" onsubmit="return confirm('Удалить пользователя?')" style="display:inline">
+              <button type="submit" class="button button-danger">Удалить</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

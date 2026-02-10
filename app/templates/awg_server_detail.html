@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <div>
+      <h1>VPN-сервер {{ awg_server_id }}</h1>
+      <div class="muted">Инстанс: <a href="/ui/servers/{{ instance.id }}">{{ instance.name }}</a></div>
+    </div>
+    <div class="row-actions">
+      <form method="post" action="/ui/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/start" style="display:inline">
+        <button type="submit">Start</button>
+      </form>
+      <form method="post" action="/ui/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/stop" style="display:inline">
+        <button type="submit" class="button button-secondary">Stop</button>
+      </form>
+      <form method="post" action="/ui/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить VPN-сервер в инстансе?')">
+        <button type="submit" class="button button-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  {% if remote_error %}
+    <div class="alert alert-error">{{ remote_error }}</div>
+  {% endif %}
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Info</h2>
+      {% if info %}
+        <pre class="pre">{{ info | tojson(indent=2) }}</pre>
+      {% else %}
+        <div class="muted">Нет данных</div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Clients</h2>
+
+      <form method="post" action="/ui/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/clients/add">
+        <label>Новый клиент
+          <input type="text" name="client_name" required placeholder="Alice's Phone">
+        </label>
+        <button type="submit">Добавить</button>
+      </form>
+
+      <hr class="hr">
+
+      {% if clients %}
+        <div class="table">
+          <div class="thead">
+            <div>ID</div><div>Имя</div><div></div><div></div>
+          </div>
+          {% for c in clients %}
+            {% set cid = c.id or c.get("id") %}
+            <div class="trow">
+              <div class="mono">{{ cid }}</div>
+              <div>{{ c.name or c.get("name") }}</div>
+              <div class="right">
+                <a class="button button-secondary" href="/api/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/clients/{{ cid }}/config">.conf</a>
+                <a class="button button-secondary" href="/api/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/clients/{{ cid }}/config-both">json</a>
+              </div>
+              <div class="right">
+                <form method="post" action="/ui/servers/{{ instance.id }}/awg/servers/{{ awg_server_id }}/clients/{{ cid }}/delete" onsubmit="return confirm('Удалить клиента?')" style="display:inline">
+                  <button type="submit" class="button button-danger">Удалить</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="muted">Список пуст или недоступен</div>
+      {% endif %}
+    </div>
+  </div>
+
+{% endblock %}

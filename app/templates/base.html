@@ -1,28 +1,42 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ title or "Amnezia Manager" }}</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ title or "Amnezia Control Center" }}</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <header class="header">
-    <div class="container header__row">
-      <a class="brand" href="/ui/servers">Amnezia Manager</a>
-      <nav class="nav">
-        <a href="/ui/servers">Серверы</a>
-        <a href="/docs" target="_blank" rel="noopener">API Docs</a>
-      </nav>
-    </div>
+  <header class="topbar">
+    <div class="brand"><a href="/ui/servers">Amnezia Control Center</a></div>
+    <nav class="nav">
+      {% if user %}
+        <a href="/ui/servers">Инстансы</a>
+        {% if user.global_role.value == "admin" %}
+          <a href="/ui/admin/users">Пользователи</a>
+        {% endif %}
+        <span class="spacer"></span>
+        <span class="muted">👤 {{ user.username }} ({{ user.global_role.value }})</span>
+        <a href="/ui/logout">Выйти</a>
+      {% else %}
+        <span class="spacer"></span>
+        <a href="/ui/login">Войти</a>
+      {% endif %}
+    </nav>
   </header>
+
   <main class="container">
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    {% if notice %}
+      <div class="alert">{{ notice }}</div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
+
   <footer class="footer">
-    <div class="container">
-      <small>Backend: FastAPI + SQLModel + Alembic + Postgres | Queue: ARQ + Redis</small>
-    </div>
+    <span class="muted">© Amnezia Control Center</span>
   </footer>
 </body>
 </html>

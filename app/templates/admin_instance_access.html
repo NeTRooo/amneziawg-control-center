@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <div>
+      <h1>Доступы к {{ instance.name }}</h1>
+      <div class="muted">Instance ID: <span class="mono">{{ instance.id }}</span></div>
+    </div>
+    <div class="row-actions">
+      <a class="button button-secondary" href="/ui/servers/{{ instance.id }}">← Назад</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Назначить/обновить доступ</h2>
+    <form method="post" action="/ui/admin/servers/{{ instance.id }}/access/set">
+      <div class="grid">
+        <label>Пользователь
+          <select name="user_id">
+            {% for u in users %}
+              <option value="{{ u.id }}">{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Роль
+          <select name="role">
+            <option value="viewer">viewer</option>
+            <option value="operator">operator</option>
+            <option value="admin">admin</option>
+          </select>
+        </label>
+      </div>
+      <button type="submit">Сохранить</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Текущие доступы</h2>
+    <div class="table">
+      <div class="thead">
+        <div>Username</div><div>Role</div><div></div>
+      </div>
+      {% for u in users %}
+        {% set a = access_map.get(u.id) %}
+        {% if a %}
+          <div class="trow">
+            <div>{{ u.username }}</div>
+            <div>{{ a.role }}</div>
+            <div class="right">
+              <form method="post" action="/ui/admin/servers/{{ instance.id }}/access/{{ a.id }}/delete" onsubmit="return confirm('Убрать доступ?')" style="display:inline">
+                <button type="submit" class="button button-danger">Удалить</button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
